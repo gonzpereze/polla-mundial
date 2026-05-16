@@ -1,1 +1,611 @@
-<!DOCTYPE html><html><body><h1>Polla Mundial 2026 — coming soon</h1></body></html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>⚽ Polla Mundial 2026</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --verde: #16a34a; --verde2: #14532d; --naranja: #f97316;
+  --fondo: #0f172a; --card: #1e293b; --card2: #334155;
+  --texto: #f1f5f9; --gris: #94a3b8; --borde: #334155;
+  --qualifies: rgba(22,163,74,0.2); --maybe: rgba(234,179,8,0.15);
+}
+body { background: var(--fondo); color: var(--texto); font-family: system-ui,sans-serif; min-height: 100vh; }
+.hidden { display: none !important; }
+
+/* Auth */
+.auth-wrap { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:1rem; }
+.auth-card { background:var(--card); border-radius:16px; padding:2rem; width:100%; max-width:380px; }
+.auth-card h1 { text-align:center; font-size:1.5rem; margin-bottom:0.25rem; }
+.auth-card p { text-align:center; color:var(--gris); font-size:0.85rem; margin-bottom:1.5rem; }
+.auth-tabs { display:flex; gap:0.5rem; margin-bottom:1.5rem; }
+.auth-tabs button { flex:1; padding:0.6rem; border:1px solid var(--borde); background:transparent; color:var(--gris);
+  border-radius:8px; cursor:pointer; font-size:0.9rem; transition:all 0.2s; }
+.auth-tabs button.active { background:var(--naranja); border-color:var(--naranja); color:white; font-weight:600; }
+.form-group { margin-bottom:1rem; }
+.form-group label { display:block; font-size:0.8rem; color:var(--gris); margin-bottom:0.35rem; }
+.form-group input { width:100%; padding:0.7rem 1rem; background:var(--card2); border:1px solid var(--borde);
+  border-radius:8px; color:var(--texto); font-size:1rem; }
+.form-group input:focus { outline:none; border-color:var(--naranja); }
+.btn-primary { width:100%; padding:0.75rem; background:var(--naranja); border:none; border-radius:8px;
+  color:white; font-size:1rem; font-weight:600; cursor:pointer; margin-top:0.5rem; }
+.btn-primary:hover { opacity:0.9; }
+.error-msg { color:#f87171; font-size:0.85rem; margin-top:0.75rem; text-align:center; min-height:1.2rem; }
+
+/* App shell */
+#app-shell { display:flex; flex-direction:column; min-height:100vh; }
+.top-bar { background:var(--card); padding:0.75rem 1rem; display:flex; align-items:center; justify-content:space-between;
+  border-bottom:1px solid var(--borde); position:sticky; top:0; z-index:10; }
+.top-bar h2 { font-size:1rem; font-weight:700; }
+.top-bar .user-info { font-size:0.8rem; color:var(--gris); }
+.content { flex:1; padding:1rem; padding-bottom:5rem; max-width:900px; margin:0 auto; width:100%; }
+.bottom-nav { position:fixed; bottom:0; left:0; right:0; background:var(--card);
+  border-top:1px solid var(--borde); display:flex; z-index:10; }
+.nav-btn { flex:1; padding:0.6rem 0.25rem; border:none; background:transparent; color:var(--gris);
+  font-size:0.65rem; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;
+  transition:color 0.2s; }
+.nav-btn .icon { font-size:1.3rem; }
+.nav-btn.active { color:var(--naranja); }
+
+/* Tabs */
+.tabs { display:flex; gap:0.4rem; overflow-x:auto; padding-bottom:0.5rem; margin-bottom:1rem; }
+.tabs::-webkit-scrollbar { height:3px; }
+.tabs::-webkit-scrollbar-thumb { background:var(--borde); border-radius:99px; }
+.tab-btn { padding:0.35rem 0.75rem; border:1px solid var(--borde); background:var(--card2);
+  color:var(--gris); border-radius:20px; cursor:pointer; font-size:0.85rem; white-space:nowrap; }
+.tab-btn.active { background:var(--naranja); border-color:var(--naranja); color:white; font-weight:600; }
+
+/* Standings table */
+.standings-table { background:var(--card); border-radius:12px; overflow:hidden; margin-bottom:1rem; }
+.standings-table table { width:100%; border-collapse:collapse; font-size:0.8rem; }
+.standings-table th { background:var(--card2); padding:0.5rem 0.4rem; text-align:center; color:var(--gris);
+  font-weight:600; font-size:0.72rem; }
+.standings-table th:nth-child(2) { text-align:left; }
+.standings-table td { padding:0.55rem 0.4rem; text-align:center; border-bottom:1px solid var(--borde); }
+.standings-table td:nth-child(2) { text-align:left; white-space:nowrap; }
+.standings-table tr:last-child td { border-bottom:none; }
+.standings-table tr.qualifies { background:var(--qualifies); }
+.standings-table tr.maybe { background:var(--maybe); }
+
+/* Match cards */
+.match-card { background:var(--card); border-radius:10px; padding:0.75rem 1rem; margin-bottom:0.5rem;
+  border:1px solid var(--borde); }
+.match-card.finished { border-color:var(--verde2); }
+.match-meta { font-size:0.7rem; color:var(--gris); margin-bottom:0.5rem; }
+.match-teams { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:0.5rem; }
+.team-home { text-align:right; font-size:0.88rem; font-weight:500; }
+.team-away { text-align:left; font-size:0.88rem; font-weight:500; }
+.score-box { display:flex; align-items:center; gap:0.3rem; justify-content:center; }
+.score-input { width:38px; padding:0.3rem; background:var(--card2); border:1px solid var(--borde);
+  border-radius:6px; color:var(--texto); font-size:0.95rem; text-align:center; }
+.score-input:focus { outline:none; border-color:var(--naranja); }
+.score-input:disabled { opacity:0.4; cursor:not-allowed; }
+.score-sep { color:var(--gris); font-weight:700; font-size:0.9rem; }
+.real-score { background:var(--card2); padding:0.25rem 0.6rem; border-radius:6px;
+  font-weight:700; font-size:0.95rem; min-width:52px; text-align:center; }
+.pts-row { display:flex; justify-content:center; margin-top:0.4rem; }
+.pts-badge { padding:0.15rem 0.6rem; border-radius:20px; font-size:0.75rem; font-weight:600; }
+.pts-3 { background:rgba(22,163,74,0.25); color:#4ade80; }
+.pts-1 { background:rgba(234,179,8,0.25); color:#fbbf24; }
+.pts-0 { background:rgba(100,116,139,0.15); color:var(--gris); }
+
+/* Bracket */
+.bracket-stage { margin-bottom:1.5rem; }
+.bracket-stage h3 { color:var(--naranja); font-size:0.85rem; font-weight:700;
+  text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.75rem; padding-bottom:0.4rem;
+  border-bottom:1px solid var(--borde); }
+.bracket-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(165px,1fr)); gap:0.5rem; }
+.bracket-card { background:var(--card); border-radius:10px; overflow:hidden; border:1px solid var(--borde); }
+.bracket-card.done { border-color:var(--verde2); }
+.bracket-team { display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0.75rem;
+  font-size:0.82rem; border-bottom:1px solid var(--borde); }
+.bracket-team:last-child { border-bottom:none; }
+.bracket-team.winner { background:var(--qualifies); font-weight:700; color:#4ade80; }
+.bracket-team.tbd { color:var(--gris); font-style:italic; }
+.bracket-team .flag { font-size:1.1rem; flex-shrink:0; }
+.bracket-team .name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.bracket-team .sc { margin-left:auto; font-weight:700; color:var(--naranja); font-size:0.9rem; }
+
+/* Leaderboard */
+.leaderboard-wrap { background:var(--card); border-radius:12px; overflow:hidden; }
+.leaderboard-table { width:100%; border-collapse:collapse; }
+.leaderboard-table th { background:var(--card2); padding:0.6rem 0.75rem; text-align:left;
+  font-size:0.78rem; color:var(--gris); font-weight:600; }
+.leaderboard-table th:nth-child(3), .leaderboard-table th:nth-child(4), .leaderboard-table th:nth-child(5) { text-align:center; }
+.leaderboard-table td { padding:0.6rem 0.75rem; border-bottom:1px solid var(--borde); font-size:0.88rem; }
+.leaderboard-table td:nth-child(3), .leaderboard-table td:nth-child(4), .leaderboard-table td:nth-child(5) { text-align:center; }
+.leaderboard-table tr.me td { background:rgba(249,115,22,0.1); }
+.leaderboard-table tr:last-child td { border-bottom:none; }
+.rank-badge { display:inline-flex; align-items:center; justify-content:center;
+  width:26px; height:26px; border-radius:50%; background:var(--card2);
+  font-weight:700; font-size:0.78rem; }
+.rank-1 { background:gold; color:#000; }
+.rank-2 { background:silver; color:#000; }
+.rank-3 { background:#cd7f32; color:#fff; }
+
+/* Especiales */
+.special-form { background:var(--card); border-radius:12px; padding:1.5rem; }
+.special-form h3 { margin-bottom:1.5rem; font-size:1.1rem; }
+.special-group { margin-bottom:1.25rem; }
+.special-group label { display:block; font-size:0.8rem; color:var(--gris); margin-bottom:0.4rem; font-weight:600; }
+.special-group select, .special-group input[type=text] { width:100%; padding:0.65rem 0.9rem;
+  background:var(--card2); border:1px solid var(--borde); border-radius:8px;
+  color:var(--texto); font-size:0.9rem; }
+.special-group select:focus, .special-group input:focus { outline:none; border-color:var(--naranja); }
+.save-indicator { color:#4ade80; font-size:0.78rem; margin-top:0.3rem; min-height:1.1rem; transition:opacity 0.3s; }
+
+/* Admin */
+.admin-match { background:var(--card); border-radius:10px; padding:0.7rem 1rem; margin-bottom:0.4rem;
+  display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; }
+.admin-match.done { opacity:0.55; }
+.admin-teams { flex:1; font-size:0.85rem; min-width:0; }
+.result-inputs { display:flex; align-items:center; gap:0.4rem; flex-shrink:0; }
+.result-inputs input { width:42px; padding:0.3rem; background:var(--card2);
+  border:1px solid var(--borde); border-radius:6px; color:var(--texto); text-align:center; font-size:0.9rem; }
+.btn-save { padding:0.35rem 0.8rem; background:var(--verde); border:none;
+  border-radius:6px; color:white; cursor:pointer; font-size:0.8rem; font-weight:600; }
+.stage-header { font-size:0.78rem; font-weight:700; color:var(--naranja);
+  text-transform:uppercase; letter-spacing:0.06em; margin:1.25rem 0 0.4rem; }
+.section-title { font-size:1.1rem; font-weight:700; margin-bottom:1rem; }
+.logout-btn { background:transparent; border:1px solid var(--borde); color:var(--gris);
+  cursor:pointer; font-size:0.78rem; padding:0.3rem 0.6rem; border-radius:6px; }
+.logout-btn:hover { border-color:var(--gris); }
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-view">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <h1>⚽ Polla Mundial 2026</h1>
+      <p>Haz tus predicciones y compite</p>
+      <div class="auth-tabs">
+        <button id="tab-login" class="active" onclick="showTab('login')">Entrar</button>
+        <button id="tab-register" onclick="showTab('register')">Registrarse</button>
+      </div>
+      <div id="auth-form"></div>
+      <div id="auth-error" class="error-msg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-shell" class="hidden">
+  <div class="top-bar">
+    <h2>⚽ Polla 2026</h2>
+    <div style="display:flex;align-items:center;gap:0.75rem">
+      <span class="user-info" id="top-user"></span>
+      <button class="logout-btn" onclick="logout()">Salir</button>
+    </div>
+  </div>
+  <div class="content">
+    <div id="view-grupos" class="view"></div>
+    <div id="view-bracket" class="view hidden"></div>
+    <div id="view-picks" class="view hidden"></div>
+    <div id="view-tabla" class="view hidden"></div>
+    <div id="view-especiales" class="view hidden"></div>
+    <div id="view-admin" class="view hidden"></div>
+  </div>
+  <nav class="bottom-nav" id="bottom-nav">
+    <button class="nav-btn active" data-view="grupos" onclick="navigate('grupos')">
+      <span class="icon">🏟️</span>Grupos
+    </button>
+    <button class="nav-btn" data-view="bracket" onclick="navigate('bracket')">
+      <span class="icon">🏆</span>Bracket
+    </button>
+    <button class="nav-btn" data-view="picks" onclick="navigate('picks')">
+      <span class="icon">✏️</span>Mis picks
+    </button>
+    <button class="nav-btn" data-view="tabla" onclick="navigate('tabla')">
+      <span class="icon">📊</span>Tabla
+    </button>
+    <button class="nav-btn" data-view="especiales" onclick="navigate('especiales')">
+      <span class="icon">⭐</span>Especiales
+    </button>
+  </nav>
+</div>
+
+<script>
+// ── Estado ────────────────────────────────────────────────────────────────────
+const S = {
+  token: localStorage.getItem("token"),
+  user: JSON.parse(localStorage.getItem("user") || "null"),
+  groups: null, bracket: null, board: null, picks: {}, special: null,
+  flags: {}, allTeams: [],
+};
+
+// ── API ───────────────────────────────────────────────────────────────────────
+async function api(method, path, body = null) {
+  try {
+    const res = await fetch("/api" + path, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        ...(S.token ? { "Authorization": "Bearer " + S.token } : {}),
+      },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+    });
+    if (res.status === 401) { logout(); return null; }
+    return res.json();
+  } catch(e) { console.error("API error", path, e); return null; }
+}
+
+function $id(i) { return document.getElementById(i); }
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+function showTab(tab) {
+  $id("tab-login").classList.toggle("active", tab === "login");
+  $id("tab-register").classList.toggle("active", tab === "register");
+  $id("auth-error").textContent = "";
+  if (tab === "login") {
+    $id("auth-form").innerHTML = `
+      <div class="form-group"><label>Usuario</label><input id="in-u" type="text" placeholder="tu_usuario" autocomplete="username"></div>
+      <div class="form-group"><label>PIN (4 dígitos)</label><input id="in-p" type="password" maxlength="4" placeholder="••••" autocomplete="current-password"></div>
+      <button class="btn-primary" onclick="doLogin()">Entrar</button>`;
+    $id("in-u").addEventListener("keydown", e => e.key==="Enter" && $id("in-p").focus());
+    $id("in-p").addEventListener("keydown", e => e.key==="Enter" && doLogin());
+  } else {
+    $id("auth-form").innerHTML = `
+      <div class="form-group"><label>Nombre completo</label><input id="in-n" type="text" placeholder="Tu nombre"></div>
+      <div class="form-group"><label>Usuario (sin espacios)</label><input id="in-u" type="text" placeholder="tu_usuario" autocomplete="username"></div>
+      <div class="form-group"><label>PIN (4 dígitos)</label><input id="in-p" type="password" maxlength="4" placeholder="••••" autocomplete="new-password"></div>
+      <button class="btn-primary" onclick="doRegister()">Registrarse</button>`;
+    $id("in-p").addEventListener("keydown", e => e.key==="Enter" && doRegister());
+  }
+}
+
+async function doLogin() {
+  const r = await api("POST", "/auth/login", { username: $id("in-u").value.trim(), pin: $id("in-p").value });
+  if (r?.token) setAuth(r);
+  else $id("auth-error").textContent = r?.detail || "Usuario o PIN incorrecto";
+}
+
+async function doRegister() {
+  const r = await api("POST", "/auth/register", {
+    nombre: $id("in-n").value.trim(), username: $id("in-u").value.trim(), pin: $id("in-p").value
+  });
+  if (r?.token) setAuth(r);
+  else $id("auth-error").textContent = r?.detail || "Error al registrarse";
+}
+
+function setAuth(r) {
+  S.token = r.token; S.user = r.user;
+  localStorage.setItem("token", r.token);
+  localStorage.setItem("user", JSON.stringify(r.user));
+  initApp();
+}
+
+function logout() {
+  S.token = null; S.user = null; S.groups = null; S.bracket = null;
+  localStorage.removeItem("token"); localStorage.removeItem("user");
+  $id("app-shell").classList.add("hidden");
+  $id("auth-view").classList.remove("hidden");
+  showTab("login");
+}
+
+// ── Init app ──────────────────────────────────────────────────────────────────
+async function initApp() {
+  $id("auth-view").classList.add("hidden");
+  $id("app-shell").classList.remove("hidden");
+  $id("top-user").textContent = S.user?.nombre || S.user?.username || "";
+
+  if (S.user?.is_admin && !document.querySelector('[data-view="admin"]')) {
+    const btn = document.createElement("button");
+    btn.className = "nav-btn"; btn.dataset.view = "admin";
+    btn.innerHTML = '<span class="icon">⚙️</span>Admin';
+    btn.onclick = () => navigate("admin");
+    $id("bottom-nav").appendChild(btn);
+  }
+
+  [S.flags] = await Promise.all([api("GET", "/flags")]);
+  S.flags = S.flags || {};
+  S.allTeams = Object.keys(S.flags).sort((a,b) => a.localeCompare(b, "es"));
+  await loadPicks();
+  navigate("grupos");
+}
+
+// ── Navegación ────────────────────────────────────────────────────────────────
+async function navigate(view) {
+  document.querySelectorAll(".view").forEach(v => v.classList.add("hidden"));
+  $id("view-" + view)?.classList.remove("hidden");
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.view === view));
+  await loadView(view);
+}
+
+async function loadView(v) {
+  if (v === "grupos") {
+    S.groups = await api("GET", "/groups");
+    renderGrupos();
+  } else if (v === "bracket") {
+    S.bracket = await api("GET", "/bracket");
+    renderBracket();
+  } else if (v === "picks") {
+    await loadPicks();
+    const ms = await api("GET", "/matches");
+    renderPicks(ms || []);
+  } else if (v === "tabla") {
+    S.board = await api("GET", "/leaderboard");
+    renderTabla();
+  } else if (v === "especiales") {
+    S.special = await api("GET", "/special/mine");
+    renderEspeciales();
+  } else if (v === "admin") {
+    const ms = await api("GET", "/matches");
+    renderAdmin(ms || []);
+  }
+}
+
+async function loadPicks() {
+  const preds = await api("GET", "/predictions/mine") || [];
+  S.picks = {};
+  preds.forEach(p => { S.picks[p.match_id] = p; });
+}
+
+// ── Grupos ────────────────────────────────────────────────────────────────────
+let activeGroup = "A";
+
+function renderGrupos() {
+  const el = $id("view-grupos");
+  if (!S.groups) { el.innerHTML = '<div class="section-title">Cargando grupos...</div>'; return; }
+  const gs = Object.keys(S.groups).sort();
+  el.innerHTML = `
+    <div class="section-title">Fase de Grupos</div>
+    <div class="tabs">${gs.map(g => `<button class="tab-btn${g===activeGroup?' active':''}" onclick="selGroup('${g}')">${g}</button>`).join("")}</div>
+    <div id="group-detail"></div>`;
+  selGroup(activeGroup);
+}
+
+function selGroup(g) {
+  activeGroup = g;
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.textContent === g));
+  const data = S.groups?.[g];
+  if (!data) return;
+  const { standings, matches } = data;
+  $id("group-detail").innerHTML = `
+    <div class="standings-table">
+      <table>
+        <thead><tr><th>#</th><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>Dif</th><th>Pts</th></tr></thead>
+        <tbody>
+          ${standings.map((t,i) => `
+            <tr class="${i<2?'qualifies':i===2?'maybe':''}">
+              <td>${i+1}</td>
+              <td>${t.flag} ${t.team}</td>
+              <td>${t.pj}</td><td>${t.g}</td><td>${t.e}</td><td>${t.p}</td>
+              <td>${t.gf}</td><td>${t.gc}</td>
+              <td>${t.dif>=0?'+':''}${t.dif}</td>
+              <td><b>${t.pts}</b></td>
+            </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>
+    ${matches.map(m => matchCard(m, true)).join("")}
+    <div style="margin-top:0.75rem;font-size:0.72rem;color:var(--gris)">
+      <span style="display:inline-block;width:10px;height:10px;background:var(--qualifies);border-radius:2px;margin-right:4px"></span>Clasifican directo
+      <span style="display:inline-block;width:10px;height:10px;background:var(--maybe);border-radius:2px;margin:0 4px 0 8px"></span>Posible mejor 3ro
+    </div>`;
+}
+
+// ── Match card ────────────────────────────────────────────────────────────────
+function matchCard(m, editable = false) {
+  const pred = S.picks[m.id];
+  const locked = m.is_locked || m.is_finished;
+  const pts = pred?.points_earned ?? null;
+  const ptsClass = pts === 3 ? "pts-3" : pts === 1 ? "pts-1" : "pts-0";
+  const stageLabel = {group:"Grupo "+m.group_name, round_of_32:"R32",
+    round_of_16:"Octavos", quarter_final:"Cuartos", semi_final:"Semis",
+    third_place:"3er Puesto", final:"Final"}[m.stage] || m.stage;
+
+  return `<div class="match-card${m.is_finished?' finished':''}">
+    <div class="match-meta">${m.match_datetime} · ${stageLabel}</div>
+    <div class="match-teams">
+      <div class="team-home">${m.flag_home||'🏳️'} ${m.team_home||'?'}</div>
+      <div class="score-box">
+        ${m.is_finished
+          ? `<div class="real-score">${m.score_home} - ${m.score_away}</div>`
+          : editable && !locked
+            ? `<input type="number" class="score-input" id="h-${m.id}" min="0" max="20"
+                value="${pred?.score_home??''}" onchange="savePick('${m.id}')">
+               <span class="score-sep">-</span>
+               <input type="number" class="score-input" id="a-${m.id}" min="0" max="20"
+                value="${pred?.score_away??''}" onchange="savePick('${m.id}')">`
+            : pred
+              ? `<div class="real-score" style="opacity:0.6">${pred.score_home}-${pred.score_away}</div>`
+              : `<div class="real-score" style="opacity:0.25">-</div>`
+        }
+      </div>
+      <div class="team-away">${m.team_away||'?'} ${m.flag_away||'🏳️'}</div>
+    </div>
+    ${m.is_finished && pred!=null ? `<div class="pts-row"><span class="pts-badge ${ptsClass}">${pts} pts</span></div>` : ''}
+  </div>`;
+}
+
+async function savePick(matchId) {
+  const hEl = $id("h-"+matchId), aEl = $id("a-"+matchId);
+  if (!hEl || !aEl || hEl.value==='' || aEl.value==='') return;
+  const h = parseInt(hEl.value), a = parseInt(aEl.value);
+  if (isNaN(h) || isNaN(a)) return;
+  await api("POST", "/predictions", { match_id: matchId, score_home: h, score_away: a });
+  S.picks[matchId] = { ...S.picks[matchId], score_home: h, score_away: a };
+}
+
+// ── Bracket ───────────────────────────────────────────────────────────────────
+function renderBracket() {
+  const el = $id("view-bracket");
+  if (!S.bracket) { el.innerHTML = '<div class="section-title">Cargando bracket...</div>'; return; }
+  const stages = [
+    { key:"round_of_32", label:"Ronda de 32 — D16" },
+    { key:"round_of_16", label:"Octavos de final" },
+    { key:"quarter_final", label:"Cuartos de final" },
+    { key:"semi_final", label:"Semifinales" },
+    { key:"final", label:"Gran Final" },
+    { key:"third_place", label:"3er y 4to Puesto" },
+  ];
+  el.innerHTML = `<div class="section-title">Bracket Eliminatorio</div>` +
+    stages.map(s => {
+      const ms = S.bracket[s.key] || [];
+      if (!ms.length) return '';
+      return `<div class="bracket-stage">
+        <h3>${s.label}</h3>
+        <div class="bracket-grid">
+          ${ms.map(m => {
+            const fin = m.is_finished;
+            const hwins = fin && m.score_home > m.score_away;
+            const awins = fin && m.score_away > m.score_home;
+            const isTbdH = !m.team_home || /^\d/.test(m.team_home) || m.team_home.startsWith("3rd");
+            const isTbdA = !m.team_away || /^\d/.test(m.team_away) || m.team_away.startsWith("3rd");
+            return `<div class="bracket-card${fin?' done':''}">
+              <div class="bracket-team${hwins?' winner':''}${isTbdH?' tbd':''}">
+                <span class="flag">${isTbdH ? '🏳️' : (S.flags[m.team_home]||'🏳️')}</span>
+                <span class="name">${isTbdH ? (m.team_home||'Por definir') : m.team_home}</span>
+                ${fin ? `<span class="sc">${m.score_home}</span>` : ''}
+              </div>
+              <div class="bracket-team${awins?' winner':''}${isTbdA?' tbd':''}">
+                <span class="flag">${isTbdA ? '🏳️' : (S.flags[m.team_away]||'🏳️')}</span>
+                <span class="name">${isTbdA ? (m.team_away||'Por definir') : m.team_away}</span>
+                ${fin ? `<span class="sc">${m.score_away}</span>` : ''}
+              </div>
+            </div>`;
+          }).join("")}
+        </div>
+      </div>`;
+    }).join("");
+}
+
+// ── Mis picks ─────────────────────────────────────────────────────────────────
+function renderPicks(matches) {
+  const el = $id("view-picks");
+  const stages = [
+    {key:"group",label:"Fase de Grupos"},
+    {key:"round_of_32",label:"Ronda de 32"},
+    {key:"round_of_16",label:"Octavos de final"},
+    {key:"quarter_final",label:"Cuartos de final"},
+    {key:"semi_final",label:"Semifinales"},
+    {key:"third_place",label:"3er y 4to Puesto"},
+    {key:"final",label:"Final"},
+  ];
+  const byStage = {};
+  matches.forEach(m => { (byStage[m.stage]=byStage[m.stage]||[]).push(m); });
+  const total = Object.values(S.picks).length;
+  el.innerHTML = `
+    <div class="section-title">Mis Predicciones <span style="font-size:0.8rem;color:var(--gris);font-weight:400">(${total} ingresadas)</span></div>
+    ${stages.map(s => {
+      const ms = byStage[s.key] || [];
+      if (!ms.length) return '';
+      return `<div class="stage-header">${s.label}</div>${ms.map(m => matchCard(m, true)).join("")}`;
+    }).join("")}`;
+}
+
+// ── Tabla ─────────────────────────────────────────────────────────────────────
+function renderTabla() {
+  const el = $id("view-tabla");
+  const board = S.board || [];
+  el.innerHTML = `
+    <div class="section-title">Tabla de Posiciones</div>
+    <div class="leaderboard-wrap">
+      <table class="leaderboard-table">
+        <thead><tr><th>#</th><th>Participante</th><th>Partidos</th><th>Especiales</th><th>Total</th></tr></thead>
+        <tbody>
+          ${board.map(r => `
+            <tr class="${r.is_current_user?'me':''}">
+              <td><span class="rank-badge rank-${r.rank<=3?r.rank:''}">${r.rank}</span></td>
+              <td>${r.icon||'⚽'} ${r.nombre}</td>
+              <td>${r.match_points}</td>
+              <td>${r.special_points}</td>
+              <td><b>${r.total_points}</b></td>
+            </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+// ── Especiales ────────────────────────────────────────────────────────────────
+function renderEspeciales() {
+  const sp = S.special || {};
+  const teamOpts = S.allTeams.map(t => `<option value="${t}"${sp.champion===t?' selected':''}>${S.flags[t]||'🏳️'} ${t}</option>`).join("");
+  const teamOptsR = S.allTeams.map(t => `<option value="${t}"${sp.runner_up===t?' selected':''}>${S.flags[t]||'🏳️'} ${t}</option>`).join("");
+  $id("view-especiales").innerHTML = `
+    <div class="section-title">Pronósticos Especiales</div>
+    <div class="special-form">
+      <div class="special-group">
+        <label>🏆 Campeón Mundial <span style="color:var(--naranja);font-weight:700">+5 pts</span></label>
+        <select id="sp-champ" onchange="saveSpecial()">
+          <option value="">-- Seleccionar equipo --</option>${teamOpts}
+        </select>
+        <div class="save-indicator" id="si-champ">${sp.champion?'✓ '+sp.champion:''}</div>
+      </div>
+      <div class="special-group">
+        <label>🥈 Subcampeón <span style="color:var(--naranja);font-weight:700">+3 pts</span></label>
+        <select id="sp-runner" onchange="saveSpecial()">
+          <option value="">-- Seleccionar equipo --</option>${teamOptsR}
+        </select>
+        <div class="save-indicator" id="si-runner">${sp.runner_up?'✓ '+sp.runner_up:''}</div>
+      </div>
+      <div class="special-group">
+        <label>⚽ Goleador del torneo <span style="color:var(--naranja);font-weight:700">+2 pts</span></label>
+        <input type="text" id="sp-scorer" value="${sp.top_scorer||''}" placeholder="Nombre del jugador" onblur="saveSpecial()">
+        <div class="save-indicator" id="si-scorer">${sp.top_scorer?'✓ '+sp.top_scorer:''}</div>
+      </div>
+      <div id="special-saved" class="save-indicator" style="text-align:center;font-size:0.85rem;"></div>
+    </div>`;
+}
+
+async function saveSpecial() {
+  await api("POST", "/special", {
+    champion: $id("sp-champ")?.value || null,
+    runner_up: $id("sp-runner")?.value || null,
+    top_scorer: $id("sp-scorer")?.value?.trim() || null,
+  });
+  const sv = $id("special-saved");
+  if (sv) { sv.textContent = "✓ Guardado"; setTimeout(() => { if($id("special-saved")) $id("special-saved").textContent=""; }, 2500); }
+}
+
+// ── Admin ─────────────────────────────────────────────────────────────────────
+function renderAdmin(matches) {
+  const stages = ["group","round_of_32","round_of_16","quarter_final","semi_final","third_place","final"];
+  const labels = {group:"Grupos",round_of_32:"Ronda de 32",round_of_16:"Octavos",
+    quarter_final:"Cuartos",semi_final:"Semis",third_place:"3er Puesto",final:"Final"};
+  const byStage = {};
+  matches.forEach(m => { (byStage[m.stage]=byStage[m.stage]||[]).push(m); });
+  $id("view-admin").innerHTML = `
+    <div class="section-title">⚙️ Ingresar Resultados</div>
+    ${stages.map(s => {
+      const ms = byStage[s] || [];
+      if (!ms.length) return '';
+      return `<div class="stage-header">${labels[s]}</div>
+        ${ms.map(m => `
+          <div class="admin-match${m.is_finished?' done':''}">
+            <div class="admin-teams">${m.flag_home||'🏳️'} ${m.team_home||'?'} vs ${m.team_away||'?'} ${m.flag_away||'🏳️'}</div>
+            ${m.is_finished
+              ? `<span style="color:var(--verde);font-size:0.85rem;font-weight:600">✓ ${m.score_home}-${m.score_away}</span>`
+              : `<div class="result-inputs">
+                  <input type="number" id="rh-${m.id}" min="0" max="20" placeholder="L">
+                  <span style="color:var(--gris)">-</span>
+                  <input type="number" id="ra-${m.id}" min="0" max="20" placeholder="V">
+                  <button class="btn-save" onclick="submitResult('${m.id}')">✓</button>
+                </div>`}
+          </div>`).join("")}`;
+    }).join("")}`;
+}
+
+async function submitResult(matchId) {
+  const h = $id("rh-"+matchId)?.value, a = $id("ra-"+matchId)?.value;
+  if (!h || !a) { alert("Ingresa ambos marcadores"); return; }
+  const r = await api("POST", "/admin/result", { match_id: matchId, score_home: parseInt(h), score_away: parseInt(a) });
+  if (r?.ok) {
+    alert(`✓ Resultado guardado.\n${r.predictions_updated} predicciones actualizadas.`);
+    const ms = await api("GET", "/matches");
+    renderAdmin(ms || []);
+  }
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+showTab("login");
+if (S.token && S.user) {
+  initApp();
+}
+</script>
+</body>
+</html>
