@@ -35,7 +35,8 @@ def match_dict(m: Match, pred: Prediction | None = None) -> dict:
          "team_home": m.team_home, "team_away": m.team_away,
          "flag_home": FLAGS.get(m.team_home, "🏳️"),
          "flag_away": FLAGS.get(m.team_away, "🏳️"),
-         "score_home": m.score_home, "score_away": m.score_away,
+         "score_home": m.score_home if m.is_finished else None,
+         "score_away": m.score_away if m.is_finished else None,
          "match_datetime": m.match_datetime, "venue": m.venue,
          "is_finished": m.is_finished, "is_locked": m.is_locked,
          "user_prediction": None}
@@ -51,7 +52,7 @@ def calc_standings(matches: list[dict]) -> list:
             if team and team not in teams:
                 teams[team] = {"team": team, "flag": flag,
                                "pj": 0, "g": 0, "e": 0, "p": 0, "gf": 0, "gc": 0, "pts": 0}
-        if m["score_home"] is None:
+        if not m["is_finished"]:
             continue
         sh, sa, th, ta = m["score_home"], m["score_away"], m["team_home"], m["team_away"]
         if not th or not ta:

@@ -574,12 +574,13 @@ function renderAdmin(matches) {
   matches.forEach(m => { (byStage[m.stage]=byStage[m.stage]||[]).push(m); });
   $id("view-admin").innerHTML = `
     <div class="section-title">⚙️ Ingresar Resultados</div>
+    <div id="admin-banner" style="display:none;padding:0.6rem 1rem;border-radius:8px;margin-bottom:0.75rem;font-weight:600;font-size:0.9rem"></div>
     ${stages.map(s => {
       const ms = byStage[s] || [];
       if (!ms.length) return '';
       return `<div class="stage-header">${labels[s]}</div>
         ${ms.map(m => `
-          <div class="admin-match${m.is_finished?' done':''}">
+          <div class="admin-match${m.is_finished?' done':''}" id="arow-${m.id}">
             <div class="admin-teams">${m.flag_home||'🏳️'} ${m.team_home||'?'} vs ${m.team_away||'?'} ${m.flag_away||'🏳️'}</div>
             ${m.is_finished
               ? `<span style="color:var(--verde);font-size:0.85rem;font-weight:600">✓ ${m.score_home}-${m.score_away}</span>`
@@ -587,20 +588,40 @@ function renderAdmin(matches) {
                   <input type="number" id="rh-${m.id}" min="0" max="20" placeholder="L">
                   <span style="color:var(--gris)">-</span>
                   <input type="number" id="ra-${m.id}" min="0" max="20" placeholder="V">
-                  <button class="btn-save" onclick="submitResult('${m.id}')">✓</button>
+                  <button class="btn-save" id="btn-${m.id}" onclick="submitResult('${m.id}')">✓</button>
+                  <span id="status-${m.id}" style="font-size:0.8rem;margin-left:0.4rem"></span>
                 </div>`}
           </div>`).join("")}`;
     }).join("")}`;
 }
 
 async function submitResult(matchId) {
-  const h = $id("rh-"+matchId)?.value, a = $id("ra-"+matchId)?.value;
-  if (!h || !a) { alert("Ingresa ambos marcadores"); return; }
+  const hEl = $id("rh-"+matchId), aEl = $id("ra-"+matchId);
+  const statusEl = $id("status-"+matchId);
+  const btnEl = $id("btn-"+matchId);
+  const h = hEl?.value ?? "", a = aEl?.value ?? "";
+  if (h === "" || a === "") {
+    if (statusEl) { statusEl.style.color="var(--rojo)"; statusEl.textContent="⚠️ Ingresa ambos marcadores"; }
+    return;
+  }
+  if (btnEl) btnEl.disabled = true;
+  if (statusEl) { statusEl.style.color="var(--gris)"; statusEl.textContent="Guardando..."; }
   const r = await api("POST", "/admin/result", { match_id: matchId, score_home: parseInt(h), score_away: parseInt(a) });
   if (r?.ok) {
-    alert(`✓ Resultado guardado.\n${r.predictions_updated} predicciones actualizadas.`);
-    const ms = await api("GET", "/matches");
+    const banner = $id("admin-banner");
+    if (banner) {
+      banner.style.display="block";
+      banner.style.background="rgba(52,211,153,0.15)";
+      banner.style.color="var(--verde)";
+      banner.textContent=`✓ ${r.predictions_updated} predicciones actualizadas`;
+      setTimeout(() => { if(banner) banner.style.display="none"; }, 3000);
+    }
+    const [ms, grps] = await Promise.all([api("GET", "/matches"), api("GET", "/groups")]);
+    S.groups = grps || S.groups;
     renderAdmin(ms || []);
+  } else {
+    if (btnEl) btnEl.disabled = false;
+    if (statusEl) { statusEl.style.color="var(--rojo)"; statusEl.textContent="❌ " + (r?.detail || "Error"); }
   }
 }
 
